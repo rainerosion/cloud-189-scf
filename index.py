@@ -5,12 +5,15 @@ import requests
 import rsa
 import time
 import logging as log
+from notify import Notify
 
 log.basicConfig(level=log.INFO)
 BI_RM = list("0123456789abcdefghijklmnopqrstuvwxyz")
 b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 def main(username, password):
+    # 通知信息
+    message = f"用户：{username[:3]+'****'+username[7:]}\n"
     s = requests.Session()
     login(s,username, password)
     rand = str(round(time.time() * 1000))
@@ -26,9 +29,11 @@ def main(username, password):
     response = s.get(surl, headers=headers)
     netdiskBonus = response.json()['netdiskBonus']
     if (response.json()['isSign'] == "false"):
-        log.info(f"未签到，签到获得{netdiskBonus}M空间")
+        message += f"状态：签到成功\n获得：{netdiskBonus}M空间"
+        log.info(f"状态：签到成功，获得：{netdiskBonus}M空间")
     else:
-        log.info(f"已经签到过了，签到获得{netdiskBonus}M空间")
+        message += f"状态：已经签到过了\n获得：{netdiskBonus}M空间"
+        log.info(f"状态：已经签到过了，获得：{netdiskBonus}M空间")
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 5.1.1; SM-G930K Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36 Ecloud/8.6.3 Android/22 clientId/355325117317828 clientModel/SM-G930K imsi/460071114317824 clientChannelId/qq proVersion/1.0.6',
         "Referer": "https://m.cloud.189.cn/zhuanti/2016/sign/index.jsp?albumBackupOpened=1",
@@ -37,17 +42,21 @@ def main(username, password):
     }
     response = s.get(url, headers=headers)
     if ("errorCode" in response.text):
+        message += "\n抽奖：{response.json()['errorCode']}"
         log.info(response.text)
     else:
         description = response.json()['description']
+        message += f"\n抽奖：{description}"
         log.info(f"抽奖获得{description}")
     response = s.get(url2, headers=headers)
     if ("errorCode" in response.text):
+        message += "\n抽奖：{response.json()['errorCode']}"
         log.info(response.text)
     else:
         description = response.json()['description']
+        message += f"\n抽奖：{description}"
         log.info(f"抽奖获得{description}")
-
+    Notify().sendMessage(message)
 
 def int2char(a):
     return BI_RM[a]
