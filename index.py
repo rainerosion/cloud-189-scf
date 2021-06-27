@@ -43,7 +43,7 @@ def main(username, password):
     response = s.get(url, headers=headers)
     if ("errorCode" in response.text):
         errCode = response.json()['errorCode']
-        message += "\n抽奖：{errCode}"
+        message += f"\n抽奖：{errCode}"
         log.info(response.text)
     else:
         description = response.json()['description']
@@ -52,7 +52,7 @@ def main(username, password):
     response = s.get(url2, headers=headers)
     if ("errorCode" in response.text):
         errCode = response.json()['errorCode']
-        message += "\n抽奖：{errCode}"
+        message += f"\n抽奖：{errCode}"
         log.info(response.text)
     else:
         description = response.json()['description']
