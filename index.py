@@ -102,7 +102,7 @@ def calculate_md5_sign(params):
     return hashlib.md5('&'.join(sorted(params.split('&'))).encode('utf-8')).hexdigest()
 
 def login(s,username, password):
-    url = "https://cloud.189.cn/udb/udb_login.jsp?pageId=1&redirectURL=/main.action"
+    url = "https://cloud.189.cn/api/portal/loginUrl.action?redirectURL=https%3A%2F%2Fcloud.189.cn%2Fweb%2Fredirect.html"
     r = s.get(url)
     captchaToken = re.findall(r"captchaToken' value='(.+?)'", r.text)[0]
     lt = re.findall(r'lt = "(.+?)"', r.text)[0]
