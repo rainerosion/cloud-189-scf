@@ -1,30 +1,44 @@
 import base64
 import hashlib
-import re
-import requests
-import rsa
-import time
 import logging as log
+import random
+import re
+import time
+
+import requests
+
+import rsa
 from notify import Notify
 
 log.basicConfig(level=log.INFO)
 BI_RM = list("0123456789abcdefghijklmnopqrstuvwxyz")
 b64map = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
+
 def main(username, password):
     # 通知信息
-    message = f"用户：{username[:3]+'****'+username[7:]}\n"
+    message = f"用户：{username[:3] + '****' + username[7:]}\n"
     s = requests.Session()
-    login(s,username, password)
+    login(s, username, password)
     rand = str(round(time.time() * 1000))
+    nocache = random.random()
     surl = f'https://api.cloud.189.cn/mkt/userSign.action?rand={rand}&clientType=TELEANDROID&version=8.6.3&model=SM-G930K'
     url = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN&activityId=ACT_SIGNIN'
     url2 = f'https://m.cloud.189.cn/v2/drawPrizeMarketDetails.action?taskId=TASK_SIGNIN_PHOTOS&activityId=ACT_SIGNIN'
+    userInfoUrl = f'https://cloud.189.cn/api/open/user/getUserInfoForPortal.action?noCache={nocache}'
     headers = {
         'User-Agent': 'Mozilla/5.0 (Linux; Android 5.1.1; SM-G930K Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36 Ecloud/8.6.3 Android/22 clientId/355325117317828 clientModel/SM-G930K imsi/460071114317824 clientChannelId/qq proVersion/1.0.6',
         "Referer": "https://m.cloud.189.cn/zhuanti/2016/sign/index.jsp?albumBackupOpened=1",
         "Host": "m.cloud.189.cn",
         "Accept-Encoding": "gzip, deflate",
+    }
+    headers2 = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36',
+        "Referer": "https://cloud.189.cn/web/main/file/folder/-11",
+        "Host": "m.cloud.189.cn",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept": "application/json;charset=UTF-8",
+        "Host": "cloud.189.cn"
     }
     response = s.get(surl, headers=headers)
     netdiskBonus = response.json()['netdiskBonus']
@@ -58,7 +72,14 @@ def main(username, password):
         description = response.json()['description']
         message += f"\n抽奖：{description}"
         log.info(f"抽奖获得{description}")
+    response = s.get(userInfoUrl, headers=headers2)
+    userinfo = response.json()
+    capacity = userinfo['capacity'] / 1073741824
+    available = userinfo['available'] / 1073741824
+    message += "\n总共容量：%.2fG" % capacity
+    message += "\n可用容量：%.2fG" % available
     Notify().sendMessage(message)
+
 
 def int2char(a):
     return BI_RM[a]
@@ -92,16 +113,19 @@ def b64tohex(a):
         d += int2char(c << 2)
     return d
 
+
 def rsa_encode(j_rsakey, string):
     rsa_key = f"-----BEGIN PUBLIC KEY-----\n{j_rsakey}\n-----END PUBLIC KEY-----"
     pubkey = rsa.PublicKey.load_pkcs1_openssl_pem(rsa_key.encode())
     result = b64tohex((base64.b64encode(rsa.encrypt(f'{string}'.encode(), pubkey))).decode())
     return result
 
+
 def calculate_md5_sign(params):
     return hashlib.md5('&'.join(sorted(params.split('&'))).encode('utf-8')).hexdigest()
 
-def login(s,username, password):
+
+def login(s, username, password):
     url = "https://cloud.189.cn/api/portal/loginUrl.action?redirectURL=https%3A%2F%2Fcloud.189.cn%2Fweb%2Fredirect.html"
     r = s.get(url)
     captchaToken = re.findall(r"captchaToken' value='(.+?)'", r.text)[0]
@@ -138,16 +162,17 @@ def login(s,username, password):
     r = s.get(redirect_url)
     return s
 
+
 def main_handler(event, context):
     i = 1
     user = [
         {'user': '152xxxxxxxx', 'pwd': 'xxxxxxxx'}
     ]
     for u in user:
-        log.info("第%s个帐号"%i)
+        log.info("第%s个帐号" % i)
         i += 1
         try:
-            main(u['user'],u['pwd'])
+            main(u['user'], u['pwd'])
         except Exception as result:
             log.error("异常%s"%result)
 
