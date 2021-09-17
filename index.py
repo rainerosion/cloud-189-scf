@@ -60,7 +60,7 @@ def main(username, password):
         message += f"\n抽奖：{errCode}"
         log.info(response.text)
     else:
-        description = response.json()['description']
+        description = response.json()['prizeName']
         message += f"\n抽奖：{description}"
         log.info(f"抽奖获得{description}")
     response = s.get(url2, headers=headers)
@@ -69,7 +69,7 @@ def main(username, password):
         message += f"\n抽奖：{errCode}"
         log.info(response.text)
     else:
-        description = response.json()['description']
+        description = response.json()['prizeName']
         message += f"\n抽奖：{description}"
         log.info(f"抽奖获得{description}")
     response = s.get(userInfoUrl, headers=headers2)
